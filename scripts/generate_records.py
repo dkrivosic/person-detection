@@ -5,7 +5,8 @@ import os
 
 flags = tf.app.flags
 flags.DEFINE_string('output_path', '', 'Path to output TFRecord')
-flags.DEFINE_string('labels_dir', '', 'Path to directory containing labels')
+flags.DEFINE_string('images_dir', '', 'Path to the directory containing images')
+flags.DEFINE_string('labels_dir', '', 'Path to the directory containing labels')
 FLAGS = flags.FLAGS
 
 def create_tf_example(example, images_dir):
@@ -19,11 +20,9 @@ def create_tf_example(example, images_dir):
 
 
     xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
-    xmaxs = [] # List of normalized right x coordinates in bounding box
-             # (1 per box)
+    xmaxs = [] # List of normalized right x coordinates in bounding box (1 per box)
     ymins = [] # List of normalized top y coordinates in bounding box (1 per box)
-    ymaxs = [] # List of normalized bottom y coordinates in bounding box
-             # (1 per box)
+    ymaxs = [] # List of normalized bottom y coordinates in bounding box (1 per box)
     classes_text = [] # List of string class name of bounding box (1 per box)
     classes = [] # List of integer class id of bounding box (1 per box)
 
@@ -59,15 +58,12 @@ def create_tf_example(example, images_dir):
 def main(_):
     writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
 
-    images_dir = '/'.join(FLAGS.labels_dir.split('/')[:-1] + ['images'])
-    print(images_dir)
-
     for filename in os.listdir(FLAGS.labels_dir):
         xml_path = os.path.join(FLAGS.labels_dir, filename)
         tree = ET.parse(xml_path)
         root = tree.getroot()
 
-        tf_example = create_tf_example(root, images_dir)
+        tf_example = create_tf_example(root, FLAGS.images_dir)
         writer.write(tf_example.SerializeToString())
 
     writer.close()
