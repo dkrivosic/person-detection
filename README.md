@@ -1,4 +1,4 @@
-# Person detection using Tensorflow object detection API
+# Person detection using [Tensorflow object detection API](https://github.com/tensorflow/models/tree/master/research/object_detection)
 
 ## Usage
 
