@@ -27,7 +27,7 @@ def create_tf_example(example, images_dir):
     classes = [] # List of integer class id of bounding box (1 per box)
 
     for obj in example[6:]:
-        classes_text.append('person')
+        classes_text.append('person'.encode('utf-8'))
         classes.append(1)
         xmin = float(obj[4][0].text) / width
         ymin = float(obj[4][1].text) / height
@@ -41,8 +41,8 @@ def create_tf_example(example, images_dir):
     tf_example = tf.train.Example(features=tf.train.Features(feature={
       'image/height': dataset_util.int64_feature(height),
       'image/width': dataset_util.int64_feature(width),
-      'image/filename': dataset_util.bytes_feature(filename),
-      'image/source_id': dataset_util.bytes_feature(filename),
+      'image/filename': dataset_util.bytes_feature(filename.encode('utf-8')),
+      'image/source_id': dataset_util.bytes_feature(filename.encode('utf-8')),
       'image/encoded': dataset_util.bytes_feature(encoded_image_data),
       'image/format': dataset_util.bytes_feature(image_format),
       'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
@@ -51,6 +51,7 @@ def create_tf_example(example, images_dir):
       'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
       'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
       'image/object/class/label': dataset_util.int64_list_feature(classes),
+      'image/object/bbox/difficult': dataset_util.int64_feature(False)
     }))
     return tf_example
 
