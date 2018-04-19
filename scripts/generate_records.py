@@ -25,6 +25,7 @@ def create_tf_example(example, images_dir):
     ymaxs = [] # List of normalized bottom y coordinates in bounding box (1 per box)
     classes_text = [] # List of string class name of bounding box (1 per box)
     classes = [] # List of integer class id of bounding box (1 per box)
+    difficult = []
 
     for obj in example[6:]:
         classes_text.append('person'.encode('utf-8'))
@@ -37,6 +38,7 @@ def create_tf_example(example, images_dir):
         xmaxs.append(xmax)
         ymins.append(ymin)
         ymaxs.append(ymax)
+        difficult.append(0) # The object is not difficult to detect
 
     tf_example = tf.train.Example(features=tf.train.Features(feature={
       'image/height': dataset_util.int64_feature(height),
@@ -51,7 +53,7 @@ def create_tf_example(example, images_dir):
       'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
       'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
       'image/object/class/label': dataset_util.int64_list_feature(classes),
-      'image/object/bbox/difficult': dataset_util.int64_feature(False)
+      'image/object/difficult': dataset_util.int64_list_feature(difficult)
     }))
     return tf_example
 
