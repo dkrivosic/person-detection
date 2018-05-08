@@ -33,7 +33,7 @@ def create_tf_example(example, images_dir):
         xmin = float(obj[4][0].text) / width
         ymin = float(obj[4][1].text) / height
         xmax = float(obj[4][2].text) / width
-        ymax = float(obj[4][1].text) / height
+        ymax = float(obj[4][3].text) / height
         xmins.append(xmin)
         xmaxs.append(xmax)
         ymins.append(ymin)
