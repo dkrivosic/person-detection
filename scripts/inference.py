@@ -87,7 +87,11 @@ print('Label map loaded.')
 
 
 PATH_TO_TEST_IMAGES = FLAGS.test_images_dir
-TEST_IMAGE_PATHS = sorted([os.path.join(PATH_TO_TEST_IMAGES, image_name) for image_name in os.listdir(PATH_TO_TEST_IMAGES) if '.png' in image_name])
+TEST_IMAGE_PATHS = sorted(
+                    [os.path.join(PATH_TO_TEST_IMAGES, image_name)
+                        for image_name in os.listdir(PATH_TO_TEST_IMAGES)
+                            if ('.png' in image_name) or ('.jpg' in image_name)]
+                    )
 
 # Size, in inches, of the output images.
 IMAGE_SIZE = (12, 8)
