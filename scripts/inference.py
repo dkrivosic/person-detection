@@ -56,71 +56,71 @@ def run_inference_for_single_image(image, graph):
             output_dict['detection_masks'] = output_dict['detection_masks'][0]
     return output_dict
 
+if __name__ == '__main__':
+    flags = tf.app.flags
+    flags.DEFINE_string('model_path', '',
+                        'Path to a frozen tensorflow model.')
+    flags.DEFINE_string('label_map_path', '',
+                        'Path to the label map.')
+    flags.DEFINE_string('test_images_dir', '',
+                        'Path to the directory with test images.')
+    flags.DEFINE_string('output_dir', '',
+                        'Path to the output directory.')
+    FLAGS = flags.FLAGS
 
-flags = tf.app.flags
-flags.DEFINE_string('model_path', '',
-                    'Path to a frozen tensorflow model.')
-flags.DEFINE_string('label_map_path', '',
-                    'Path to the label map.')
-flags.DEFINE_string('test_images_dir', '',
-                    'Path to the directory with test images.')
-flags.DEFINE_string('output_dir', '',
-                    'Path to the output directory.')
-FLAGS = flags.FLAGS
+    # Load Tensorflow model into memory
+    detection_graph = tf.Graph()
+    with detection_graph.as_default():
+      od_graph_def = tf.GraphDef()
+      with tf.gfile.GFile(FLAGS.model_path, 'rb') as fid:
+        serialized_graph = fid.read()
+        od_graph_def.ParseFromString(serialized_graph)
+        tf.import_graph_def(od_graph_def, name='')
 
-# Load Tensorflow model into memory
-detection_graph = tf.Graph()
-with detection_graph.as_default():
-  od_graph_def = tf.GraphDef()
-  with tf.gfile.GFile(FLAGS.model_path, 'rb') as fid:
-    serialized_graph = fid.read()
-    od_graph_def.ParseFromString(serialized_graph)
-    tf.import_graph_def(od_graph_def, name='')
+    print('Model loaded successfully.')
 
-print('Model loaded successfully.')
-
-# Load label map
-label_map = label_map_util.load_labelmap(FLAGS.label_map_path)
-categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=1, use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
-print('Label map loaded.')
+    # Load label map
+    label_map = label_map_util.load_labelmap(FLAGS.label_map_path)
+    categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=1, use_display_name=True)
+    category_index = label_map_util.create_category_index(categories)
+    print('Label map loaded.')
 
 
-PATH_TO_TEST_IMAGES = FLAGS.test_images_dir
-TEST_IMAGE_PATHS = sorted(
-                    [os.path.join(PATH_TO_TEST_IMAGES, image_name)
-                        for image_name in os.listdir(PATH_TO_TEST_IMAGES)
-                            if ('.png' in image_name) or ('.jpg' in image_name)]
-                    )
+    PATH_TO_TEST_IMAGES = FLAGS.test_images_dir
+    TEST_IMAGE_PATHS = sorted(
+                        [os.path.join(PATH_TO_TEST_IMAGES, image_name)
+                            for image_name in os.listdir(PATH_TO_TEST_IMAGES)
+                                if ('.png' in image_name) or ('.jpg' in image_name)]
+                        )
 
-# Size, in inches, of the output images.
-IMAGE_SIZE = (12, 8)
+    # Size, in inches, of the output images.
+    IMAGE_SIZE = (12, 8)
 
-if not os.path.exists(FLAGS.output_dir):
-    os.makedirs(FLAGS.output_dir)
+    if not os.path.exists(FLAGS.output_dir):
+        os.makedirs(FLAGS.output_dir)
 
-# Inference
-for image_path in TEST_IMAGE_PATHS:
-    print('Running inference for ' + image_path)
-    image = Image.open(image_path).convert('RGB')
-    image_np = load_image_into_numpy_array(image)
-    # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-    image_np_expanded = np.expand_dims(image_np, axis=0)
-    output_dict = run_inference_for_single_image(image_np, detection_graph)
+    # Inference
+    for image_path in TEST_IMAGE_PATHS:
+        print('Running inference for ' + image_path)
+        image = Image.open(image_path).convert('RGB')
+        image_np = load_image_into_numpy_array(image)
+        # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
+        image_np_expanded = np.expand_dims(image_np, axis=0)
+        output_dict = run_inference_for_single_image(image_np, detection_graph)
 
-    # Visualization of the results of a detection.
-    vis_util.visualize_boxes_and_labels_on_image_array(
-        image_np,
-        output_dict['detection_boxes'],
-        output_dict['detection_classes'],
-        output_dict['detection_scores'],
-        category_index,
-        instance_masks=output_dict.get('detection_masks'),
-        use_normalized_coordinates=True,
-        line_thickness=8)
-    plt.figure(figsize=IMAGE_SIZE)
-    plt.imshow(image_np)
+        # Visualization of the results of a detection.
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            image_np,
+            output_dict['detection_boxes'],
+            output_dict['detection_classes'],
+            output_dict['detection_scores'],
+            category_index,
+            instance_masks=output_dict.get('detection_masks'),
+            use_normalized_coordinates=True,
+            line_thickness=8)
+        plt.figure(figsize=IMAGE_SIZE)
+        plt.imshow(image_np)
 
-    image_name = image_path.split('/')[-1]
-    output_path = os.path.join(FLAGS.output_dir, image_name)
-    plt.savefig(output_path)
+        image_name = image_path.split('/')[-1]
+        output_path = os.path.join(FLAGS.output_dir, image_name)
+        plt.savefig(output_path)
