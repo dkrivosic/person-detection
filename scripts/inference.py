@@ -7,7 +7,6 @@ from object_detection.utils import ops as utils_ops
 from PIL import Image
 from matplotlib import pyplot as plt
 
-
 def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
     return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
@@ -101,8 +100,11 @@ if __name__ == '__main__':
         os.makedirs(FLAGS.output_dir)
 
     # Inference
+    total_images = len(TEST_IMAGE_PATHS)
+    image_index = 0
     for image_path in TEST_IMAGE_PATHS:
-        print('Running inference for ' + image_path)
+        image_index += 1
+        print('Running inference for image ' + str(image_index) + '/' + str(total_images))
         image = Image.open(image_path).convert('RGB')
         image_np = load_image_into_numpy_array(image)
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
@@ -110,7 +112,7 @@ if __name__ == '__main__':
         output_dict = run_inference_for_single_image(image_np, detection_graph)
 
         # Visualization of the results of a detection.
-        vis_util.visualize_boxes_and_labels_on_image_array(
+        image_np = vis_util.visualize_boxes_and_labels_on_image_array(
             image_np,
             output_dict['detection_boxes'],
             output_dict['detection_classes'],
@@ -118,10 +120,12 @@ if __name__ == '__main__':
             category_index,
             instance_masks=output_dict.get('detection_masks'),
             use_normalized_coordinates=True,
-            line_thickness=8)
+            line_thickness=1)
         plt.figure(figsize=IMAGE_SIZE)
         plt.imshow(image_np)
 
         image_name = image_path.split('/')[-1]
         output_path = os.path.join(FLAGS.output_dir, image_name)
-        plt.savefig(output_path)
+
+        im = Image.fromarray(image_np)
+        im.save(output_path)
