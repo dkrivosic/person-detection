@@ -111,6 +111,12 @@ if __name__ == '__main__':
         image_np_expanded = np.expand_dims(image_np, axis=0)
         output_dict = run_inference_for_single_image(image_np, detection_graph)
 
+        # Keep only detections of people
+        ignore = output_dict['detection_classes'] != 1
+        output_dict['detection_scores'][ignore] = 0
+        output_dict['detection_boxes'][ignore] = np.zeros((4,))
+        output_dict['detection_classes'][ignore] = 0
+
         # Visualization of the results of a detection.
         image_np = vis_util.visualize_boxes_and_labels_on_image_array(
             image_np,
