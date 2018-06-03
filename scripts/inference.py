@@ -1,11 +1,13 @@
-import tensorflow as tf
 import os
+
 import numpy as np
+import tensorflow as tf
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 from object_detection.utils import ops as utils_ops
 from PIL import Image
 from matplotlib import pyplot as plt
+from timeit import default_timer
 
 def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
@@ -93,15 +95,13 @@ if __name__ == '__main__':
                                 if ('.png' in image_name) or ('.jpg' in image_name)]
                         )
 
-    # Size, in inches, of the output images.
-    IMAGE_SIZE = (12, 8)
-
     if not os.path.exists(FLAGS.output_dir):
         os.makedirs(FLAGS.output_dir)
 
     # Inference
     total_images = len(TEST_IMAGE_PATHS)
     image_index = 0
+    total_time = 0.0
     for image_path in TEST_IMAGE_PATHS:
         image_index += 1
         print('Running inference for image ' + str(image_index) + '/' + str(total_images))
@@ -109,7 +109,11 @@ if __name__ == '__main__':
         image_np = load_image_into_numpy_array(image)
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         image_np_expanded = np.expand_dims(image_np, axis=0)
+
+        start = timer()
         output_dict = run_inference_for_single_image(image_np, detection_graph)
+        end = timer()
+        total_time += (end - start)
 
         # Keep only detections of people
         ignore = output_dict['detection_classes'] != 1
@@ -127,11 +131,10 @@ if __name__ == '__main__':
             instance_masks=output_dict.get('detection_masks'),
             use_normalized_coordinates=True,
             line_thickness=1)
-        plt.figure(figsize=IMAGE_SIZE)
-        plt.imshow(image_np)
 
         image_name = image_path.split('/')[-1]
         output_path = os.path.join(FLAGS.output_dir, image_name)
 
         im = Image.fromarray(image_np)
         im.save(output_path)
+    print('Average time per image: ' + total_time / total_images)
