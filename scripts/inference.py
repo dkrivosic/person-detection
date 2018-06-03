@@ -137,4 +137,4 @@ if __name__ == '__main__':
 
         im = Image.fromarray(image_np)
         im.save(output_path)
-    print('Average time per image: ' + total_time / total_images)
+    print('Average time per image: ' + str(total_time / total_images))
