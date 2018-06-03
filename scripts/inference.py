@@ -7,7 +7,7 @@ from object_detection.utils import visualization_utils as vis_util
 from object_detection.utils import ops as utils_ops
 from PIL import Image
 from matplotlib import pyplot as plt
-from timeit import default_timer
+from timeit import default_timer as timer
 
 def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
