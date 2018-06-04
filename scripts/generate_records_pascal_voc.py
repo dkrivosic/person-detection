@@ -1,0 +1,91 @@
+import tensorflow as tf
+from object_detection.utils import dataset_util
+import xml.etree.ElementTree as ET
+import os
+
+flags = tf.app.flags
+flags.DEFINE_string('output_path', '', 'Path to output TFRecord')
+flags.DEFINE_string('images_dir', '', 'Path to the directory containing images')
+flags.DEFINE_string('labels_dir', '', 'Path to the directory containing labels')
+FLAGS = flags.FLAGS
+
+def create_tf_example(example, images_dir):
+    size = example.find('size')
+    height = int(size.find('height').text) # Image height
+    width = int(size.find('width').text) # Image width
+
+    filename = example.find('filename').text # Filename of the image. Empty if image is not from file
+    image_format = b'png' # b'jpeg' or b'png'
+
+    with tf.gfile.GFile(os.path.join(images_dir, filename), 'rb') as f:
+        encoded_image_data = f.read() # Encoded image bytes
+
+
+    xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
+    xmaxs = [] # List of normalized right x coordinates in bounding box (1 per box)
+    ymins = [] # List of normalized top y coordinates in bounding box (1 per box)
+    ymaxs = [] # List of normalized bottom y coordinates in bounding box (1 per box)
+    classes_text = [] # List of string class name of bounding box (1 per box)
+    classes = [] # List of integer class id of bounding box (1 per box)
+    difficult = []
+
+    for obj in example.iter('object'):
+        object_class = obj.find('name').text
+        if object_class != 'person':
+            continue
+
+        classes_text.append(object_class.encode('utf-8'))
+        classes.append(1)
+        box = obj.find('bndbox')
+        xmin = float(box.find('xmin').text) / width
+        ymin = float(box.find('ymin').text) / height
+        xmax = float(box.find('xmax').text) / width
+        ymax = float(box.find('ymax').text) / height
+        xmins.append(xmin)
+        xmaxs.append(xmax)
+        ymins.append(ymin)
+        ymaxs.append(ymax)
+        difficult.append(0) # The object is not difficult to detect
+
+    if not classes_text:
+        return None
+
+    tf_example = tf.train.Example(features=tf.train.Features(feature={
+      'image/height': dataset_util.int64_feature(height),
+      'image/width': dataset_util.int64_feature(width),
+      'image/filename': dataset_util.bytes_feature(filename.encode('utf-8')),
+      'image/source_id': dataset_util.bytes_feature(filename.encode('utf-8')),
+      'image/encoded': dataset_util.bytes_feature(encoded_image_data),
+      'image/format': dataset_util.bytes_feature(image_format),
+      'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
+      'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
+      'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
+      'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
+      'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
+      'image/object/class/label': dataset_util.int64_list_feature(classes),
+      'image/object/difficult': dataset_util.int64_list_feature(difficult)
+    }))
+    return tf_example
+
+
+def main(_):
+    writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
+    count = 0
+    for filename in os.listdir(FLAGS.labels_dir):
+        xml_path = os.path.join(FLAGS.labels_dir, filename)
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        try:
+            tf_example = create_tf_example(root, FLAGS.images_dir)
+        except:
+            tf_example = None
+        if tf_example is not None:
+            count += 1
+            writer.write(tf_example.SerializeToString())
+    print('Found ' + str(count) + ' examples.')
+    writer.close()
+
+
+if __name__ == '__main__':
+    tf.app.run()
