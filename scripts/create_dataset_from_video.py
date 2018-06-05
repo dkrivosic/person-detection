@@ -40,7 +40,7 @@ image_index = 0
 labels_by_frame = {}
 
 # Set the frames you want to use in a dataset
-frames = list(range(2, 15))
+frames = list(range(1, 14)) + list(range(256, 271)) + list(range(4938, 4961))
 
 # Read ground truth labels
 with open(args.labels_path, 'r') as f:
@@ -60,8 +60,13 @@ with open(args.labels_path, 'r') as f:
 
         labels_by_frame[frame_id].append((min_row, max_row, min_col, max_col))
 
-for frame_index in frames:
+frame_index = 1
+for _ in range(frames[-1]):
     _, frame = cap.read()
+    frame_index += 1
+
+    if frame_index not in frames:
+        continue
 
     x, y = 0, 0
     for x in range(vertical_cells):
@@ -80,8 +85,8 @@ for frame_index in frames:
 
             # Create XML tree structure
             top = Element('annotation')
-            name_tag = SubElement(top, 'filename')
-            name_tag.text = filename
+            filename_tag = SubElement(top, 'filename')
+            filename_tag.text = filename
             size_tag = SubElement(top, 'size')
             width_tag = SubElement(size_tag, 'width')
             width_tag.text = str(cell_width)
@@ -121,7 +126,15 @@ for frame_index in frames:
                 object_tag = SubElement(top, 'object')
                 name_tag = SubElement(object_tag, 'name')
                 name_tag.text = 'person'
-                bndbox_tag = SubElement(object_tag, 'name')
+                bndbox_tag = SubElement(object_tag, 'bndbox')
+                xmin_tag = SubElement(bndbox_tag, 'xmin')
+                xmin_tag.text = str(xmin)
+                xmax_tag = SubElement(bndbox_tag, 'xmax')
+                xmax_tag.text = str(xmax)
+                ymin_tag = SubElement(bndbox_tag, 'ymin')
+                ymin_tag.text = str(ymin)
+                ymax_tag = SubElement(bndbox_tag, 'ymax')
+                ymax_tag.text = str(ymax)
 
             # Save XML file
             xml_name = "%04d.xml" % (image_index)
